@@ -62,8 +62,18 @@ print(head(cluster11.markers, 10))
 print(head(cluster12.markers, 10))
 print(head(cluster13.markers, 10)) #Vegfc @20
 print(head(cluster14.markers, 10))
-print(head(cluster15.markers, 10)) #Vegfc @
+print(head(cluster15.markers, 10)) #Vegfc@???
 print(head(cluster16.markers, 10))
+
+#extract cluster genes as a string
+cluster.marker.string <- row.names(cluster)
+#add cluster genes to original cluster markers as column
+cluster.markers <- cbind(cluster.markers, cluster.marker.string) # can change cluster.string to column name using Gene = cluster.marker.string
+#Find ranking for GOI in cluster.markers
+which(cluster2.markers == "Vegfc", arr.ind=TRUE)
+
+#import my list of Vegfc pathway Genes of interest and store them as named variable string
+Vegfc_pathway_GOIs <- read.delim('~/R/Brittan_Group_Data/bioinformatics_Cass/objects/Vegfc_Pathway_GOIs.txt', sep="\t")
 
 #Violin plot showing probability density at different expression levels of the Vegfc for each cluster Healthy vs MI.
 VlnPlot(newdf, features = "Vegfc", split.by = "condition", pt.size = 0.25)
