@@ -1,0 +1,186 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(Seurat)
+library(Matrix)
+library(tidyverse)
+library(BiocManager)
+library(cowplot)
+```
+
+```{r}
+#version check (3.1.1)
+packageVersion("Seurat")
+```
+
+```{r}
+#load dataset
+newdf <- readRDS("~/R/Brittan_Group_Data/bioinformatics_Cass/objects/new.endothelial.heart_Cass_May2019.rds")
+```
+
+```{r}
+#generate clustering map
+DimPlot(newdf, reduction.use = "umap", label = T)
+```
+
+```{r}
+umap_healthy_vs_MI <- DimPlot(newdf, reduction = "umap", group.by = "condition")
+umap_clusters <- DimPlot(newdf, reduction = "umap", label = TRUE)
+plot_grid(umap_healthy_vs_MI, umap_clusters)
+```
+
+```{r}
+#Generate gene feature plots with healthy and MI data mapped separately.
+FeaturePlot(newdf, features = c("GOI"), split.by = "condition", label = T)
+```
+
+```{r}
+#Generate gene feature plot for co-expression of multiple genes
+FeaturePlot(newdf, features = c("GOI_1", "GOI_2"), cols = c("grey", "red", "blue"), split.by = "condition", label = T, blend = TRUE)
+```
+
+```{r}
+#Look up GOI and generate dot plots for individual treatment groups or datasets
+DotPlot(newdf, features = c("GOI"), group.by = "condition")
+DotPlot(newdf, features = c("GOI"), group.by = "dataset")
+
+#Receptor/Ligand Expression
+DotPlot(newdf, features = c("Flt4", "Kdr", "Nrp2", "Vegfc"), group.by = "condition", dot.scale = 30)
+```
+
+```{r}
+#Generate Ligand/Recepter Dotplots
+Vegfc_Dotplot <- DotPlot(newdf, features = c("Vegfc"), group.by = "condition")
+Kdr_Dotplot <- DotPlot(newdf, features = c("Kdr"), group.by = "condition")
+Nrp2_Dotplot <- DotPlot(newdf, features = c("Nrp2"), group.by = "condition")
+Flt4_Dotplot <- DotPlot(newdf, features = c("Flt4"), group.by = "condition")
+plot_grid(Vegfc_Dotplot, Kdr_Dotplot, Nrp2_Dotplot, Flt4_Dotplot)
+```
+
+```{r}
+#save.SNN=T saves the SNN so that the  SLM algorithm can be rerun using the same graph, but with a different resolution value (see docs for full details)
+newdf <- FindClusters(newdf)
+```
+
+```{r}
+#generate tSNE plot of clusters
+newdf <- RunTSNE(newdf, dims.use = 0:16, do.fast = T)
+TSNEPlot(newdf, do.label = T, label = T) #total cell population
+TSNEPlot(newdf, do.label = T, split.by = "condition", label = T) #split tSNE by Healthy vs. MI
+```
+
+```{r}
+# find markers for each cluster 
+cluster0.markers <- FindMarkers(newdf, ident.1 = 0, min.pct = 0.25)
+cluster1.markers <- FindMarkers(newdf, ident.1 = 1, min.pct = 0.25)
+cluster2.markers <- FindMarkers(newdf, ident.1 = 2, min.pct = 0.25)
+cluster3.markers <- FindMarkers(newdf, ident.1 = 3, min.pct = 0.25)
+cluster4.markers <- FindMarkers(newdf, ident.1 = 4, min.pct = 0.25)
+cluster5.markers <- FindMarkers(newdf, ident.1 = 5, min.pct = 0.25)
+cluster6.markers <- FindMarkers(newdf, ident.1 = 6, min.pct = 0.25)
+cluster7.markers <- FindMarkers(newdf, ident.1 = 7, min.pct = 0.25)
+cluster8.markers <- FindMarkers(newdf, ident.1 = 8, min.pct = 0.25)
+cluster9.markers <- FindMarkers(newdf, ident.1 = 9, min.pct = 0.25)
+cluster10.markers <- FindMarkers(newdf, ident.1 = 10, min.pct = 0.25)
+cluster11.markers <- FindMarkers(newdf, ident.1 = 11, min.pct = 0.25)
+cluster12.markers <- FindMarkers(newdf, ident.1 = 12, min.pct = 0.25)
+cluster13.markers <- FindMarkers(newdf, ident.1 = 13, min.pct = 0.25)
+cluster14.markers <- FindMarkers(newdf, ident.1 = 14, min.pct = 0.25)
+cluster15.markers <- FindMarkers(newdf, ident.1 = 15, min.pct = 0.25)
+cluster16.markers <- FindMarkers(newdf, ident.1 = 16, min.pct = 0.25)
+```
+
+```{r}
+#print top 10 markers for each cluster
+print(head(cluster0.markers, 10))
+print(head(cluster1.markers, 10))
+print(head(cluster2.markers, 10)) #Vegfc @8
+print(head(cluster3.markers, 10)) 
+print(head(cluster4.markers, 10))
+print(head(cluster5.markers, 10)) #Vegfc @21
+print(head(cluster6.markers, 10)) 
+print(head(cluster7.markers, 10))
+print(head(cluster8.markers, 10))
+print(head(cluster9.markers, 10))
+print(head(cluster10.markers, 10))
+print(head(cluster11.markers, 10))
+print(head(cluster12.markers, 10))
+print(head(cluster13.markers, 10)) #Vegfc @20
+print(head(cluster14.markers, 10))
+print(head(cluster15.markers, 10)) #Vegfc@???
+print(head(cluster16.markers, 10))
+```
+
+```{r}
+#extract cluster genes as a string and add cluster genes to original cluster markers as column named "Gene"
+cluster0.markers.string <- row.names(cluster0.markers)
+Gene = cluster0.markers.string
+cluster0.markers <- cbind(cluster0.markers, Gene)
+
+#write cluster string to .txt file suitble for GO Term input
+write.table(cluster0.markers.string, file = "Cluster0_Markers_GO.txt", sep = "\n",
+            row.names = FALSE, col.names = FALSE, quote = FALSE)
+```
+
+```{r}
+#Find ranking for GOI in cluster.markers
+which(cluster2.markers == "Vegfc", arr.ind=TRUE)
+```
+
+```{r}
+#import my list of Vegfc pathway Genes of interest and store them as named variable data.frame
+Vegfc_pathway_GOIs <- read.delim('~/R/Brittan_Group_Data/bioinformatics_Cass/objects/Vegfc_Pathway_GOIs.txt', sep="\t")
+#Vegfc Pathway GOI's
+Vegfc_pathway_GOIs <- c("Vegfc","Kdr","Flt4","Nrp2","Mapk1","Egr1","Fos","Ccnd1","Pik3ca","Akt1","Bcl2","Casp9","Casp3","Parp1","Sh2d2a","Plcg1","Shc2","Dag1","Itpr3","Prkca","Sphk1","Kras","Raf1",	"Map2k1","Mapk1","Pla2g4a","Nfatc1","Ptgs2","Ptgir","Ptk2","Pxn","Cdc42","Mapk14","Mapkapk3","Hspb1","Src","Rac1","Nos3","Akt1","Bad","Mtor","Ptk2b","Bcar1")
+```
+
+```{r}
+#Violin plot showing probability density at different expression levels of the Vegfc for each cluster Healthy vs MI.
+VlnPlot(newdf, features = "Vegfc", split.by = "condition", pt.size = 0.25)
+VlnPlot(newdf, features = "Vegfc", split.by = "condition", pt.size = 0) # no points
+```
+
+```{r}
+#Show the expression of the gene in the context of all the cells, this helps validate the specificity of the marker or the quality of the clustering.
+FeaturePlot(newdf, features = "Vegfc")
+FeaturePlot(newdf, features = "Vegfc", split.by = "condition", label = T) #split by Healthy vs MI
+```
+
+```{r}
+#
+VlnPlot(newdf, features = c("Vegfc","Kdr","Flt4","Nrp2","Mapk1","Egr1","Fos","Ccnd1","Pik3ca","Akt1"), ncol = 5, split.by = "condition", pt.size = 0)
+VlnPlot(newdf, features = c("Bcl2","Casp9","Casp3","Parp1","Sh2d2a","Plcg1","Shc2","Dag1","Itpr3","Prkca"), ncol = 5, split.by = "condition", pt.size = 0)
+VlnPlot(newdf, features = c("Sphk1","Kras","Raf1","Map2k1","Mapk1","Pla2g4a","Nfatc1","Ptgs2","Ptgir","Ptk2"), ncol = 5, split.by = "condition", pt.size = 0)
+VlnPlot(newdf, features = c("Pxn","Cdc42","Mapk14","Mapkapk3","Hspb1","Src","Rac1","Nos3","Akt1","Bad"), ncol = 5, split.by = "condition", pt.size = 0)
+VlnPlot(newdf, features = c("Mtor","Ptk2b","Bcar1"), ncol = 5, split.by = "condition", pt.size = 0)
+```
+
+```{r}
+p1 <- DimPlot(newdf, reduction = "umap", group.by = "condition")
+p2 <- DimPlot(newdf, reduction = "umap", label = TRUE)
+plot_grid(p1, p2)
+```
+
+```{r}
+#heatmap of Vegfc pathway components across clusters
+DoHeatmap(newdf, features = Vegfc_pathway_GOIs)
+```
+
+```{r}
+DotPlot(newdf, features = c("Mapk1","Pla2g4a","Nfatc1","Ptgs2","Ptgir","Ptk2","Pxn","Cdc42","Mapk14","Mapkapk3","Hspb1","Src","Rac1","Nos3","Akt1","Bad","Mtor","Ptk2b","Bcar1"), group.by = "condition")
+```
+
+```{r}
+DotPlot(newdf, features = c("Vegfc","Kdr","Flt4","Nrp2","Mapk1","Egr1","Fos","Ccnd1","Pik3ca","Akt1","Bcl2","Casp9","Casp3","Parp1","Sh2d2a","Plcg1","Shc2","Dag1","Itpr3","Prkca","Sphk1","Kras","Raf1","Map2k1"), group.by = "condition")
+```
+
+```{r}
+DotPlot(newdf, features = c("Mapk1","Fos","Ccnd1","Plcg1","Prkca","Raf1","Map2k1","Ptk2","Pxn","Cdc42","Mapk14","Rac1","Bad","Mtor","Bcar1","Kdr","Flt4","Nrp2","Vegfc"), group.by = "condition")
+```
